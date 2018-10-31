@@ -25,6 +25,7 @@ class FCR{
     public:
         FCR(const Position & p){
             R = p;
+            step = 0;
         }
         ~FCR(){}
         void find_path(int battery){
@@ -32,7 +33,6 @@ class FCR{
             std::vector<Position> ini_path;
             ini_path.push_back(R);
             _paths.push(ini_path);
-
 
             for(int i=1;i<=battery;i++){//std::cout<<"{"<<battery<<"}\n";
                 int s = _paths.size();
@@ -48,7 +48,7 @@ class FCR{
                         if(_count == 0 || _count == 1){
                             std::vector<Position> new_path = old_path;
                             new_path.push_back(np);
-                            if(np == R) _qualified_paths.push(new_path);
+                            if(np == R) _qualified_paths.push_back(new_path);
                             else _paths.push(new_path);
                         }
                     }
@@ -60,7 +60,7 @@ class FCR{
                             if(_count == 0 || _count == 1){
                             std::vector<Position> new_path = old_path;
                             new_path.push_back(np);
-                            if(np == R) _qualified_paths.push(new_path);
+                            if(np == R) _qualified_paths.push_back(new_path);
                             else _paths.push(new_path);
                         }
                     }
@@ -72,7 +72,7 @@ class FCR{
                         if(_count == 0 || _count == 1){
                             std::vector<Position> new_path = old_path;
                             new_path.push_back(np);
-                            if(np == R) _qualified_paths.push(new_path);
+                            if(np == R) _qualified_paths.push_back(new_path);
                             else _paths.push(new_path);
                         }
                     }
@@ -84,7 +84,7 @@ class FCR{
                         if(_count == 0 || _count == 1){
                             std::vector<Position> new_path = old_path;
                             new_path.push_back(np);
-                            if(np == R) _qualified_paths.push(new_path);
+                            if(np == R) _qualified_paths.push_back(new_path);
                             else _paths.push(new_path);
                         }
                     }
@@ -92,12 +92,39 @@ class FCR{
             }
         }
         void solve(){
+            ///Choose condition 1: counting is less
+            ///Choose condition 2: path is long enough(?)
+            //inner counting :
+            //outer counting : get more 0.
+            //union both is the best solution.
+            bool flag = false;
+
             for(int i=0;i<ROW;i++){
                 for(int j=0;j<COL;j++){
                     if(_map[i][j]!='0') continue;
-                    //qualified path.
 
+                    Position np(i,j);
+                    int s = _qualified_paths.size();
+                    std::vector<Position> ideal_path;//default is _qualified_path[size-1];
+                    int _counting = 0;
+                    int ideal_path_index = s-1;
+
+                    for(int k=s-1;k>=0;k--){//find the paths contains np
+                        std::vector<Position> test_path = _qualified_paths[k];
+                        int ts = test_path.size();
+                        int new_counting = 0;
+                        for(int l=1;l<ts;l++){
+                            int row = test_path[l].row;
+                            int col = test_path[l].col;
+                            if(_map[row][col] == '0') new_counting++;
+                        }
+                        if(new_counting > _counting){_counting = new_counting; ideal_path_index = k;}
+                    }
+                    if(_counting == 0){flag = true; break;}//no path can reach this point !
+
+                    ///go through this
                 }
+                if(flag) break;
             }
         }
         void show_solution(){
@@ -119,9 +146,10 @@ class FCR{
 
     private:
         std::queue<std::vector<Position>> _paths;
-        std::queue<std::vector<Position>> _qualified_paths;
+        std::vector<std::vector<Position>> _qualified_paths;
         std::queue<std::vector<Position>> _solutions;
         Position R;
+        int step;
 };
 
 
@@ -150,8 +178,8 @@ int main(void){
     ///FCR declaration.
     FCR fcr(p);
     fcr.find_path(battery);
-    //fcr.slove();
-    fcr.show_solution();
+    fcr.slove();
+    //fcr.show_solution();
 
     return 0;
 }
