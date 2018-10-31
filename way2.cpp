@@ -5,6 +5,11 @@
 #include <vector>
 
 #define MAX_MAPSIZE 1000
+#define WALL '1'
+#define FLOOR '0'
+#define BASE 'R'
+#define DU_NOTATION '@'
+#define GO_NOTATION 'X'
 
 std::string in_file_name="floor.data";
 std::string out_file_name="final.path";
@@ -41,7 +46,7 @@ class FCR{
                     _paths.pop();
                     Position p = old_path.back();
                     //down
-                    if(p.row < ROW-1 && _map[p.row+1][p.col] != '1'){
+                    if(p.row < ROW-1 && _map[p.row+1][p.col] != WALL){
                         Position np(p.row+1, p.col);//examine if np in path.
                         int _count=0;
                         for(int j=0;j<i;j++) if(old_path[j] == np) _count++;
@@ -53,7 +58,7 @@ class FCR{
                         }
                     }
                     //up
-                    if(p.row > 0 && _map[p.row-1][p.col] != '1'){
+                    if(p.row > 0 && _map[p.row-1][p.col] != WALL){
                         Position np(p.row-1, p.col);
                         int _count=0;
                         for(int j=0;j<i;j++) if(old_path[j] == np) _count++;
@@ -65,7 +70,7 @@ class FCR{
                         }
                     }
                     //left
-                    if(p.col < COL-1 && _map[p.row][p.col+1] != '1'){
+                    if(p.col < COL-1 && _map[p.row][p.col+1] != WALL){
                         Position np(p.row, p.col+1);
                         int _count=0;
                         for(int j=0;j<i;j++) if(old_path[j] == np) _count++;
@@ -77,7 +82,7 @@ class FCR{
                         }
                     }
                     //right
-                    if(p.col > 0 && _map[p.row][p.col-1] != '1'){
+                    if(p.col > 0 && _map[p.row][p.col-1] != WALL){
                         Position np(p.row, p.col-1);
                         int _count=0;
                         for(int j=0;j<i;j++) if(old_path[j] == np) _count++;
@@ -106,14 +111,14 @@ class FCR{
                     int new_counting = 0;
                     for(int j=1;j<ts;j++){
                         Position np = test_path[j];
-                        if(_map[np.row][np.col] == '0'){//but how to fix the duplicate problem?
+                        if(_map[np.row][np.col] == FLOOR){
                             new_counting++;
-                            _map[np.row][np.col] = '@';
+                            _map[np.row][np.col] = DU_NOTATION;
                             duplicate.push_back(np);
                         }
                     }
                     int ds = duplicate.size();
-                    for(int j=0;j<ds;j++){Position dp = duplicate[j];_map[dp.row][dp.col] = '0';}
+                    for(int j=0;j<ds;j++){Position dp = duplicate[j];_map[dp.row][dp.col] = FLOOR;}
                     if(new_counting > _counting){_counting = new_counting;it = i;}
                 }
                 if(_counting == 0) break;
@@ -123,7 +128,7 @@ class FCR{
                 s = ideal_path.size();
                 for(int i=1;i<s;i++){
                     Position np = ideal_path[i];
-                    _map[np.row][np.col] = 'X';
+                    _map[np.row][np.col] = GO_NOTATION;
                     step++;
                 }
                 _solutions.push(ideal_path);
@@ -167,7 +172,7 @@ int main(void){
     for(int i=0;i<ROW;i++){
         for(int j=0;j<COL;j++){
             in_file>>_map[i][j];
-            if(_map[i][j] == 'R'){
+            if(_map[i][j] == BASE){
                 p.row =i;
                 p.col =j;
             }
