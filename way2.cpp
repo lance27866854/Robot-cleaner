@@ -33,7 +33,8 @@ class FCR{
             ini_path.push_back(R);
             _paths.push(ini_path);
 
-            while(battery--){//std::cout<<"{"<<battery<<"}\n";
+
+            for(int i=1;i<=battery;i++){//std::cout<<"{"<<battery<<"}\n";
                 int s = _paths.size();
                 while(s--){
                     std::vector<Position> old_path = _paths.front();
@@ -41,35 +42,51 @@ class FCR{
                     Position p = old_path.back();
                     //down
                     if(p.row < ROW-1 && _map[p.row+1][p.col] != '1'){
-                        Position np(p.row+1, p.col);
-                        std::vector<Position> new_path = old_path;
-                        new_path.push_back(np);
-                        if(np == R) _qualified_paths.push(new_path);
-                        else _paths.push(new_path);
+                        Position np(p.row+1, p.col);//examine if np in path.
+                        int _count=0;
+                        for(int j=0;j<i;j++) if(old_path[j] == np) _count++;
+                        if(_count == 0 || _count == 1){
+                            std::vector<Position> new_path = old_path;
+                            new_path.push_back(np);
+                            if(np == R) _qualified_paths.push(new_path);
+                            else _paths.push(new_path);
+                        }
                     }
                     //up
                     if(p.row > 0 && _map[p.row-1][p.col] != '1'){
                         Position np(p.row-1, p.col);
-                        std::vector<Position> new_path = old_path;
-                        new_path.push_back(np);
-                        if(np == R) _qualified_paths.push(new_path);
-                        else _paths.push(new_path);
+                        int _count=0;
+                        for(int j=0;j<i;j++) if(old_path[j] == np) _count++;
+                            if(_count == 0 || _count == 1){
+                            std::vector<Position> new_path = old_path;
+                            new_path.push_back(np);
+                            if(np == R) _qualified_paths.push(new_path);
+                            else _paths.push(new_path);
+                        }
                     }
                     //left
                     if(p.col < COL-1 && _map[p.row][p.col+1] != '1'){
                         Position np(p.row, p.col+1);
-                        std::vector<Position> new_path = old_path;
-                        new_path.push_back(np);
-                        if(np == R) _qualified_paths.push(new_path);
-                        else _paths.push(new_path);
+                        int _count=0;
+                        for(int j=0;j<i;j++) if(old_path[j] == np) _count++;
+                        if(_count == 0 || _count == 1){
+                            std::vector<Position> new_path = old_path;
+                            new_path.push_back(np);
+                            if(np == R) _qualified_paths.push(new_path);
+                            else _paths.push(new_path);
+                        }
                     }
                     //right
                     if(p.col > 0 && _map[p.row][p.col-1] != '1'){
                         Position np(p.row, p.col-1);
-                        std::vector<Position> new_path = old_path;
-                        new_path.push_back(np);
-                        if(np == R) _qualified_paths.push(new_path);
-                        else _paths.push(new_path);
+                        int _count=0;
+                        for(int j=0;j<i;j++) if(old_path[j] == np) _count++;
+                        if(_count == 0 || _count == 1){
+                            std::vector<Position> new_path = old_path;
+                            new_path.push_back(np);
+                            if(np == R) _qualified_paths.push(new_path);
+                            else _paths.push(new_path);
+                        }
                     }
                 }
             }
@@ -84,6 +101,7 @@ class FCR{
             }
         }
         void show_solution(){
+            /*
             int qs = _qualified_paths.size();
             std::cout<<qs<<"\n";
             while(qs--){
@@ -96,6 +114,7 @@ class FCR{
                 }
                 std::cout<<"-----------------------------\n";
             }
+            */
         }
 
     private:
