@@ -92,12 +92,7 @@ class FCR{
             }
         }
         void solve(){
-            ///Choose condition 1: counting is less
-            ///Choose condition 2: path is long enough(?)
-            //inner counting :
-            //outer counting : get more 0.
-            //union both is the best solution.
-
+            ///Choose the path that through more 0s.
             while(1){
                 int s = _qualified_paths.size();
                 int _counting = 0;
@@ -106,13 +101,19 @@ class FCR{
                 ///Find the most efficient path in qualified path.
                 for(auto i = it;i != _qualified_paths.end();i++){
                     std::vector<Position> test_path = *i;
+                    std::vector<Position> duplicate;
                     int ts = test_path.size();
                     int new_counting = 0;
                     for(int j=1;j<ts;j++){
-                        int row = test_path[j].row;
-                        int col = test_path[j].col;
-                        if(_map[row][col] == '0') new_counting++;//but how to solve the duplicate problem?
+                        Position np = test_path[j];
+                        if(_map[np.row][np.col] == '0'){//but how to fix the duplicate problem?
+                            new_counting++;
+                            _map[np.row][np.col] = '@';
+                            duplicate.push_back(np);
+                        }
                     }
+                    int ds = duplicate.size();
+                    for(int j=0;j<ds;j++){Position dp = duplicate[j];_map[dp.row][dp.col] = '0';}
                     if(new_counting > _counting){_counting = new_counting;it = i;}
                 }
                 if(_counting == 0) break;
