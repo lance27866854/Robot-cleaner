@@ -1,7 +1,7 @@
 #include <fstream>
 #include <iostream>
 #include <queue>
-#include <map>
+#include <list>
 #include <vector>
 
 #define MAX_MAPSIZE 1000
@@ -97,56 +97,54 @@ class FCR{
             //inner counting :
             //outer counting : get more 0.
             //union both is the best solution.
-            bool flag = false;
 
-            for(int i=0;i<ROW;i++){
-                for(int j=0;j<COL;j++){
-                    if(_map[i][j]!='0') continue;
+            while(1){
+                int s = _qualified_paths.size();
+                int _counting = 0;
+                auto it = _qualified_paths.begin();
 
-                    Position np(i,j);
-                    int s = _qualified_paths.size();
-                    std::vector<Position> ideal_path;//default is _qualified_path[size-1];
-                    int _counting = 0;
-                    int ideal_path_index = s-1;
-
-                    for(int k=s-1;k>=0;k--){//find the paths contains np
-                        std::vector<Position> test_path = _qualified_paths[k];
-                        int ts = test_path.size();
-                        int new_counting = 0;
-                        for(int l=1;l<ts;l++){
-                            int row = test_path[l].row;
-                            int col = test_path[l].col;
-                            if(_map[row][col] == '0') new_counting++;
-                        }
-                        if(new_counting > _counting){_counting = new_counting; ideal_path_index = k;}
+                ///Find the most efficient path in qualified path.
+                for(auto i = it;i != _qualified_paths.end();i++){
+                    std::vector<Position> test_path = *i;
+                    int ts = test_path.size();
+                    int new_counting = 0;
+                    for(int j=1;j<ts;j++){
+                        int row = test_path[j].row;
+                        int col = test_path[j].col;
+                        if(_map[row][col] == '0') new_counting++;//but how to solve the duplicate problem?
                     }
-                    if(_counting == 0){flag = true; break;}//no path can reach this point !
-
-                    ///go through this
+                    if(new_counting > _counting){_counting = new_counting;it = i;}
                 }
-                if(flag) break;
+                if(_counting == 0) break;
+
+                ///Go through this path
+                std::vector<Position> ideal_path = *it;
+                s = ideal_path.size();
+                for(int i=1;i<s;i++){
+                    Position np = ideal_path[i];
+                    _map[np.row][np.col] = 'X';
+                    step++;
+                }
+                _solutions.push(ideal_path);
+                _qualified_paths.erase(it);
             }
         }
         void show_solution(){
-            /*
-            int qs = _qualified_paths.size();
-            std::cout<<qs<<"\n";
-            while(qs--){
-                std::vector<Position> p = _qualified_paths.front();
-                _qualified_paths.pop();
-
-                int vs = p.size();
-                for(int i=0;i<vs;i++){
+            std::cout<<step<<"\n";
+            int s = _solutions.size();
+            while(s--){
+                std::vector<Position> p = _solutions.front();
+                _solutions.pop();
+                int ps = p.size();
+                for(int i=1;i<ps;i++){
                     std::cout<<p[i].row<<" "<<p[i].col<<"\n";
                 }
-                std::cout<<"-----------------------------\n";
             }
-            */
         }
 
     private:
         std::queue<std::vector<Position>> _paths;
-        std::vector<std::vector<Position>> _qualified_paths;
+        std::list<std::vector<Position>> _qualified_paths;
         std::queue<std::vector<Position>> _solutions;
         Position R;
         int step;
@@ -178,8 +176,8 @@ int main(void){
     ///FCR declaration.
     FCR fcr(p);
     fcr.find_path(battery);
-    fcr.slove();
-    //fcr.show_solution();
+    fcr.solve();
+    fcr.show_solution();
 
     return 0;
 }
