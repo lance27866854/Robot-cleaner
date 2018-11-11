@@ -59,17 +59,16 @@ class FCR{
             nodes.push(m2);
             nodes.push(m3);
             nodes.push(m4);
-            int _count = 0;
-            while(_count<1000){//std::cout<<_count<<"\n";
-                _count++;
+
+            ///BFS
+            while(!nodes.empty()){
                 InPosition ip = nodes.front();
                 int dir = ip.first;
                 Position p = ip.second;
                 nodes.pop();
-                std::cout<<p.first<<" "<<p.second<<"\n";
-
+                //extend.
                 if(p.first<ROW&&p.first>=0&&p.second<COL&&p.second>=0){
-                    if(_map[p.first][p.second] == ROAD){
+                    if(!_visited[p.first][p.second]&&_map[p.first][p.second] == ROAD){
                         //four case.
                         Position d1{p.first-1, p.second};//UP
                         Position d2{p.first+1, p.second};//DOWN
@@ -98,11 +97,14 @@ class FCR{
                         }
                     }
                 }
+                _visited[p.first][p.second] = 1;
             }
-
+            int c = 0;
             for(auto it = edges.begin();it != edges.end();it++){
                 std::cout<<*it;
+                c++;
             }
+            std::cout<<c<<"\n";
         }
         void solve(){
         }
