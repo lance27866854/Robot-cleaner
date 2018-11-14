@@ -74,7 +74,7 @@ class FCR{
             StepTable[0]=0;
             for(int i=2;i<=max_cnt;i++){
                 StepTable[i] += StepTable[i-1];
-                std::cout<<StepTable[i]<<" ";
+                //std::cout<<StepTable[i]<<" ";
             }
         }
         void Find_route(Position u, Position v){
@@ -85,23 +85,60 @@ class FCR{
 
         }
         void solve(){
+            /*for(auto it = nodes_vec.rbegin();it!= nodes_vec.rend();it++){
+                std::cout<<it->second.first<<" "<<it->second.second<<"\n";
+            }*/
             int solve_index = nodes_vec.size()-1;
-            while(solve_index >= 0){
+            while(solve_index >= 0){//for every unvisited node.
                 //to see if we have been to this node.
                 if(nodes_vec[solve_index].first == true){solve_index--;continue;}
                 //pick nodes[solve_index] as the destination.
                 //select two scenario of traversal, the more unvisited nodes gets , better the path is.
                 //We can get the value of nodes[i](specific steps),
                 //from the index of StepTable[i-1](include) to StepTable[i](exclude).
-                std::stack<Position> route;
+                //we start from the last element, we go back and find two different path.
+                std::vector<Position> route;
                 //if the node's step is 9, we start from 8.
-                int cnt = nodes_step_vec[solve_index]-1;
-                for(int i=cnt;i>0;i--){
+                int choice_index = solve_index;
+                int cnt = nodes_step_vec[choice_index]-1;
+                std::cout<<nodes_vec[choice_index].second.first<<" "<<nodes_vec[choice_index].second.second<<"\n";
+
+                for(int i=cnt;i>0;i--){//8~1
+                    Map[nodes_vec[choice_index].second.first][nodes_vec[choice_index].second.second] = '&';
+                    int next_choice_index;
                     for(int j=StepTable[i-1];j<StepTable[i];j++){
                         //choose the best(not visited) adjacent node.
+                        if(can_reach(choice_index, j)){
+                            next_choice_index = j;
+                            if(!nodes_vec[j].first){
+                                nodes_vec[j].first = true;
+                                break;
+                            }
+                        }
                     }
+                    choice_index = next_choice_index;
+                    route.push_back(nodes_vec[choice_index].second);
                 }
+                solve_index--;
+                for(auto it = route.begin();it!= route.end();it++){std::cout<<it->first<<" "<<it->second<<"\n";}
+                std::cout<<"----------------------------------------\n";
+                //break;
             }
+            for(int i=0;i<ROW;i++){
+                for(int j=0;j<COL;j++){
+                    std::cout<<Map[i][j]<<" ";
+                }
+                std::cout<<"\n";
+            }
+        }
+        bool can_reach(int i, int j){
+            ///This function help to determine
+            ///if the elements of nodes_vec of index i and index j is adjacent to each other.
+            Position u = nodes_vec[i].second;
+            Position v = nodes_vec[j].second;
+            if((u.first-v.first == 1 || v.first-u.first == 1) && v.second == u.second) return true;
+            else if((u.second-v.second == 1 || v.second-u.second == 1) && v.first == u.first) return true;
+            else return false;
         }
         void show_solution(){
         }
@@ -136,7 +173,7 @@ class FCR{
      ///FCR declaration.
     FCR fcr(p);
     fcr.BuildGraph();
-    //fcr.solve();
+    fcr.solve();
     //fcr.show_solution();
      return 0;
 }
