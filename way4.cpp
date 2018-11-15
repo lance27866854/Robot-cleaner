@@ -9,6 +9,8 @@
 
 std::string in_file_name="floor.data";
 std::string out_file_name="final.path";
+std::ifstream in_file;
+std::ofstream out_file;
 
 char Map[MAX_MAPSIZE][MAX_MAPSIZE];
 bool Visited[MAX_MAPSIZE][MAX_MAPSIZE];
@@ -131,7 +133,7 @@ class FCR{
                 solve_index--;
                 step += nodes_step_vec[solve_index]*2;
             }
-            std::cout<<step<<"\n";
+            out_file<<step<<"\n";
 
             ///Join different paths.
             int first_start_port=0;
@@ -196,12 +198,12 @@ class FCR{
             std::vector<Position> u = node->u;
             std::vector<Position> v = node->v;
             for(auto it = v.rbegin();it != v.rend();it++){
-                std::cout<<it->first<<" "<<it->second<<"\n";
+                out_file<<it->first<<" "<<it->second<<"\n";
             }
             for(auto it = u.begin()+1;it != u.end();it++){
-                std::cout<<it->first<<" "<<it->second<<"\n";
+                out_file<<it->first<<" "<<it->second<<"\n";
             }
-            std::cout<<R.first<<" "<<R.second<<"\n";
+            out_file<<R.first<<" "<<R.second<<"\n";
         }
 
         //tool functions below.
@@ -278,8 +280,6 @@ class FCR{
 
 int main(void){
     ///file settings.
-    std::ifstream in_file;
-    std::ofstream out_file;
     in_file.open(in_file_name,std::ios::in);
     out_file.open(out_file_name,std::ios::out);
     if(!in_file){std::cout<<"Something wrong with file.\n";return 1;}
