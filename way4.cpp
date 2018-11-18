@@ -33,10 +33,7 @@ class Node{
             u.resize(0);
             v.resize(0);
         }
-        ~Node(){
-            u.~vector();
-            v.~vector();
-        }
+        ~Node(){}
         int type;
         std::vector<Position> u;
         std::vector<Position> v;
@@ -81,7 +78,7 @@ class FCR{
                         //visit it.
                         Visited[p.first][p.second] = 1;
                         StepTable[cnt]++;
-                        if(cnt > max_cnt) max_cnt = cnt;
+                        if(cnt > max_cnt) max_cnt = cnt;//max step.
 
                         //for nodes_vec.
                         nodes_vec.push_back({false, p});
@@ -115,6 +112,7 @@ class FCR{
                 Node* node = new Node(i);
                 port_table.push_back(node);
             }//0~15
+
         }
         void solve(){
             ///In this function, we will build the ideal paths
@@ -129,9 +127,9 @@ class FCR{
                 get_route(solve_index, node->u);
                 get_route(solve_index, node->v);
                 build_port_table(node);
+                step += nodes_step_vec[solve_index]*2;
                 times++;
                 solve_index--;
-                step += nodes_step_vec[solve_index]*2;
             }
             out_file<<step<<"\n";
 
@@ -155,7 +153,11 @@ class FCR{
 
             int last_port = first_start_port;
             int travel_times = 0;
-            while(1){
+            //------------------------------------debug------------------------------------
+            for(int i=0;i<16;i++){std::cout<<port_table[i]->type<<" ";}
+            std::cout<<"\n";
+
+            while(1){//std::cout<<last_port<<"\n";
                 //go!
                 Node *go = port_table[last_port]->next;
                 port_table[last_port]->type--;
@@ -180,13 +182,16 @@ class FCR{
                 }
             }
             //case the u, v need to be swapped.
-            int idx;
+            ///Warning! it sometimes fails.
+
+            int idx = new_out * 4;
             for(int i=0;i<port_num;i++){
                 if(port_table[i + new_out*4]->type>0){
                     idx = i + new_out*4;
                     break;
                 }
             }
+            //std::cout<<idx<<"\n";
             Node *node = port_table[idx]->next;
             std::vector<Position> temp = node->u;
             node->u = node->v;
