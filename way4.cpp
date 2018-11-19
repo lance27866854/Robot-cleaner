@@ -45,7 +45,6 @@ class FCR{
         FCR(const Position & p){
             R = p;
             step = 0;
-            max_cnt = 0;
         }
         ~FCR(){}
         void BuildGraph(){
@@ -54,13 +53,200 @@ class FCR{
             //2.build nodes_step_vec
             //3.build StepTable
             //4.build port
+            //5.build port table
 
             ///1, 2, 3
+            find_routes(R, {0, 0}, 1);
+
+            ///4
+            port_num = StepTable[1];
+            for(int i=0;i<port_num;i++){
+                Port[i] = nodes_vec[i].second;
+                std::cout<<"Port["<<i<<"] = "<<Port[i].first<<" "<<Port[i].second<<"\n";
+            }
+
+            ///5
+            for(int i=0;i<16;i++){
+                Node* node = new Node(i);
+                port_table.push_back(node);
+            }//0~15
+        }
+        void solve(){
+            ///In this function, we will build the ideal paths
+            //1.use solve_index refers to the current destination of the ideal path.
+            //2.every iteration we first check if this node has been gone through, if so, continue.
+            int solve_index = nodes_vec.size()-1;
+            int times = 0;//how many nodes are there.
+            while(solve_index >= 0){
+                if(nodes_vec[solve_index].first == true){solve_index--;continue;}
+                //select two scenario of traversal, the more unvisited nodes gets , better the path is.
+                Node *node = new Node;
+                get_route(solve_index, node->u);
+                get_route(solve_index, node->v);
+                build_port_table(node);
+                step += nodes_step_vec[solve_index]*2;
+                times++;
+                solve_index--;
+            }
+
+            ///Join different paths.
+            int first_start_port=0;
+            int max_count=port_table[0]->type;
+            for(int i=1;i<port_num;i++){
+                int idx = 5*i;
+                if(port_table[idx]->type > max_count)
+                    first_start_port = idx;
+            }
+            if(max_count == 0){
+                int idx = 0;
+                for(int i=0;i<port_num;i++)
+                    for(int j=0;j<port_num;j++)
+                        if(max_count < port_table[i*4+j]->type)
+                            idx = i*4+j;
+                //if idx = 0 return.
+                first_start_port = idx;
+            }
+
+            int last_port = first_start_port;
+            int travel_times = 0;
+
+            while(1){std::cout<<last_port<<"\n";
+                //go!
+                Node *go = port_table[last_port]->next;
+                port_table[last_port]->type--;
+                port_table[last_port]->next = go->next;
+                output_solution(go);
+                delete go;
+
+                travel_times++;
+                if(travel_times == times)break;
+                //choose next port.
+                last_port = get_next_port(last_port);
+            }
+        }
+        void out_to_file(){
+            out_file<<step<<"\n";
+            for(auto it = answer_position.begin();it!=answer_position.end();it++)
+                out_file<<it->first<<" "<<it->second<<"\n";
+        }
+
+        int get_next_port(const int& last_port){
+            //in = last_port / 4 = new_out
+            //First, choose the path no need to change.(self loop first).
+            int new_out = last_port / 4;
+            if(port_table[new_out*5]->type>0) return new_out*5;//self loop.
+            for(int i=0;i<port_num;i++){
+                if(port_table[new_out + i*4]->type>0){
+                    return new_out + i*4;
+                }
+            }
+
+            //case the u, v need to be swapped.
+            int idx = -1;
+            for(int i=0;i<port_num;i++){
+                if(port_table[i + new_out*4]->type>0){
+                    idx = i + new_out*4;
+                    break;
+                }
+            }
+            if(idx != -1){
+                Node *node = port_table[idx]->next;
+                std::vector<Position> temp = node->u;
+                node->u = node->v;
+                node->v = temp;
+                return idx;
+            }
+            else{
+                int op = revise_path(new_out);std::cout<<"&"<<op<<"\n";
+                if(port_table[op*5]->type>0) return op*5;//self loop.
+                for(int i=0;i<port_num;i++){
+                    if(port_table[op + i*4]->type>0){
+                        return op + i*4;
+                    }
+                }
+                //reverse.
+                for(int i=0;i<port_num;i++){
+                    if(port_table[i + op*4]->type>0){
+                        idx = i + op*4;
+                        break;
+                    }
+                }
+                Node *node = port_table[idx]->next;
+                std::vector<Position> temp = node->u;
+                node->u = node->v;
+                node->v = temp;
+                return idx;
+            }
+        }
+        int revise_path(int out){
+            ///choose the max port.
+            int port_destination[4]={0};
+            for(int i=0;i<4;i++){
+                for(int j=0;j<4;j++){
+                    //port_destination[j] += port_table[4*i+j]->type;
+                    port_destination[i] += port_table[4*i+j]->type;
+                }
+            }
+
+            int max_port=0;
+            for(int i=0;i<4;i++) if(port_destination[i]>max_port) max_port = i;
+
+
+            Position from = Port[out];
+            Position to = Port[max_port];
+            find_routes(from, to, 0);
+
+            std::vector<Position> route;
+            int choice_index = nodes_vec.size()-1;
+            int cnt = nodes_step_vec[choice_index]-1;
+            step += (cnt+3);
+            //std::cout<<"cnt = "<<cnt<<"\n";
+            for(int i=cnt;i>0;i--){
+                int next_choice_index;
+                for(int j=StepTable[i-1];j<StepTable[i];j++){
+                    //choose any can_reach adjacent node.
+                    if(can_reach(choice_index, j)){
+                        next_choice_index = j;
+                        break;
+                    }
+                }
+                route.push_back(nodes_vec[choice_index].second);
+                choice_index = next_choice_index;
+            }
+            route.push_back(nodes_vec[choice_index].second);
+
+            answer_position.push_back(from);
+            std::cout<<from.first<<" "<<from.second<<"\n";
+            for(auto it = route.rbegin();it!=route.rend();it++){
+                answer_position.push_back(*it);
+                std::cout<<it->first<<" "<<it->second<<"\n";
+            }
+            answer_position.push_back(R);
+            return max_port;
+        }
+        void find_routes(const Position& from, const Position& to, bool flag){
+            ///Reuse
+            for(int i=0;i<ROW;i++){
+                for(int j=0;j<COL;j++){
+                    Visited[i][j] = 0;
+                    StepTable[i*ROW + j] = 0;
+                }
+            }
+            int max_cnt = 0;
+            nodes_vec.clear();
+            nodes_step_vec.clear();
+
+            ///In this function, we will do things below:
+            //1.build nodes_vec.
+            //2.build nodes_step_vec.
+            //3.build StepTable.
+            //PS. the flag means that if this is initialization mode.
+
             std::queue<StepPosition> nodes;
-            StepPosition m1{1, {R.first-1, R.second}};//UP
-            StepPosition m2{1, {R.first+1, R.second}};//DOWN
-            StepPosition m3{1, {R.first, R.second+1}};//RIGHT
-            StepPosition m4{1, {R.first, R.second-1}};//LEFT
+            StepPosition m1{1, {from.first-1, from.second}};//UP
+            StepPosition m2{1, {from.first+1, from.second}};//DOWN
+            StepPosition m3{1, {from.first, from.second+1}};//RIGHT
+            StepPosition m4{1, {from.first, from.second-1}};//LEFT
             nodes.push(m1);
             nodes.push(m2);
             nodes.push(m3);
@@ -83,6 +269,7 @@ class FCR{
                         //for nodes_vec.
                         nodes_vec.push_back({false, p});
                         nodes_step_vec.push_back(cnt);
+                        if(flag == 0 && p == to){break;}
 
                         //four case.
                         StepPosition d1{cnt+1, {p.first-1, p.second}};//UP
@@ -100,115 +287,18 @@ class FCR{
             for(int i=2;i<=max_cnt;i++){
                 StepTable[i] += StepTable[i-1];
             }
-
-            ///4
-            port_num = StepTable[1];
-            for(int i=0;i<port_num;i++){
-                Port[i] = nodes_vec[i].second;
-            }
-
-            ///5
-            for(int i=0;i<16;i++){
-                Node* node = new Node(i);
-                port_table.push_back(node);
-            }//0~15
-
-        }
-        void solve(){
-            ///In this function, we will build the ideal paths
-            //1.use solve_index refers to the current destination of the ideal path.
-            //2.every iteration we first check if this node has been gone through, if so, continue.
-            int solve_index = nodes_vec.size()-1;
-            int times = 0;//how many nodes are there.
-            while(solve_index >= 0){
-                if(nodes_vec[solve_index].first == true){solve_index--;continue;}
-                //select two scenario of traversal, the more unvisited nodes gets , better the path is.
-                Node *node = new Node;
-                get_route(solve_index, node->u);
-                get_route(solve_index, node->v);
-                build_port_table(node);
-                step += nodes_step_vec[solve_index]*2;
-                times++;
-                solve_index--;
-            }
-            out_file<<step<<"\n";
-
-            ///Join different paths.
-            int first_start_port=0;
-            int max_count=port_table[0]->type;
-            for(int i=1;i<port_num;i++){
-                int idx = 5*i;
-                if(port_table[idx]->type > max_count)
-                    first_start_port = idx;
-            }
-            if(max_count == 0){
-                int idx = 0;
-                for(int i=0;i<port_num;i++)
-                    for(int j=0;j<port_num;j++)
-                        if(max_count < port_table[i*4+j]->type)
-                            idx = i*4+j;
-                //if idx = 0 return.
-                first_start_port = idx;
-            }
-
-            int last_port = first_start_port;
-            int travel_times = 0;
-            //------------------------------------debug------------------------------------
-            for(int i=0;i<16;i++){std::cout<<port_table[i]->type<<" ";}
-            std::cout<<"\n";
-
-            while(1){//std::cout<<last_port<<"\n";
-                //go!
-                Node *go = port_table[last_port]->next;
-                port_table[last_port]->type--;
-                port_table[last_port]->next = go->next;
-                output_solution(go);
-                delete go;
-
-                travel_times++;
-                if(travel_times == times)break;
-                //choose next port.
-                last_port = get_next_port(last_port);
-            }
-        }
-        int get_next_port(const int& last_port){
-            //in = last_port / 4 = new_out
-            //First, choose the path no need to change.(self loop first).
-            int new_out = last_port / 4;
-            if(port_table[new_out*5]->type>0) return new_out*5;//self loop.
-            for(int i=0;i<port_num;i++){
-                if(port_table[new_out + i*4]->type>0){
-                    return new_out + i*4;
-                }
-            }
-            //case the u, v need to be swapped.
-            ///Warning! it sometimes fails.
-
-            int idx = new_out * 4;
-            for(int i=0;i<port_num;i++){
-                if(port_table[i + new_out*4]->type>0){
-                    idx = i + new_out*4;
-                    break;
-                }
-            }
-            //std::cout<<idx<<"\n";
-            Node *node = port_table[idx]->next;
-            std::vector<Position> temp = node->u;
-            node->u = node->v;
-            node->v = temp;
-            return idx;
         }
         void output_solution(Node *node){
             //show solution and return the next port.
             std::vector<Position> u = node->u;
             std::vector<Position> v = node->v;
             for(auto it = v.rbegin();it != v.rend();it++){
-                out_file<<it->first<<" "<<it->second<<"\n";
+                answer_position.push_back(*it);
             }
             for(auto it = u.begin()+1;it != u.end();it++){
-                out_file<<it->first<<" "<<it->second<<"\n";
+                answer_position.push_back(*it);
             }
-            out_file<<R.first<<" "<<R.second<<"\n";
+            answer_position.push_back(R);
         }
 
         //tool functions below.
@@ -276,11 +366,11 @@ class FCR{
         std::vector<VistPosition> nodes_vec;
         std::vector<int> nodes_step_vec;
         std::vector<Node *> port_table;
+        std::vector<Position> answer_position;
         Position Port[4];
         Position R;
         int step;
         int port_num;//how many port are there.
-        int max_cnt;
 };
 
 int main(void){
@@ -308,5 +398,6 @@ int main(void){
     FCR fcr(p);
     fcr.BuildGraph();
     fcr.solve();
+    fcr.out_to_file();
     return 0;
 }
