@@ -90,46 +90,54 @@ class FCR{
             }
 
             ///Join different paths.
-            int first_start_port=0;
-            int max_count=port_table[0]->type;
-            for(int i=1;i<port_num;i++){
-                int idx = 5*i;
-                if(port_table[idx]->type > max_count)
-                    first_start_port = idx;
-            }
-            if(max_count == 0){
-                int idx = 0;
-                for(int i=0;i<port_num;i++)
-                    for(int j=0;j<port_num;j++)
-                        if(max_count < port_table[i*4+j]->type)
-                            idx = i*4+j;
-                //if idx = 0 return.
-                first_start_port = idx;
+            //initial condition.
+            //First, we look for any nonzero port.
+            int first_start_port;
+            bool flag = 0;
+            for(int i=0;i<port_num;i++){
+                for(int j=0;j<port_num;j++){
+                    if(port_table[i*4+j]->type > 0){
+                        first_start_port = i*4+j;
+                        flag = 1;
+                        break;
+                    }
+                }
+                if(flag == 1) break;
             }
 
+            //Second, we start a while loop with important variable "last_port".
+            //In every iteration, we choose a path from port table and output it.
+            //At the end of the iteration, we need find the next last_port with the function "get_next_port".
+            //Stop the while-loop if we traverse every paths we stored in port_table. (use travel_time for counting.)
             int last_port = first_start_port;
             int travel_times = 0;
-
-            while(1){std::cout<<last_port<<"\n";
-                //go!
+            while(1){//std::cout<<last_port<<"\n";
+                //go.
                 Node *go = port_table[last_port]->next;
                 port_table[last_port]->type--;
                 port_table[last_port]->next = go->next;
-                output_solution(go);
+                std::vector<Position> u = go->u;//from v to u
+                std::vector<Position> v = go->v;
+                get_solution_position(v, 1, 0);//vector, reverse, base
+                get_solution_position(u, 0, 1);
                 delete go;
 
+                //stop condition.
                 travel_times++;
                 if(travel_times == times)break;
+
                 //choose next port.
                 last_port = get_next_port(last_port);
             }
         }
+
         void out_to_file(){
             out_file<<step<<"\n";
             for(auto it = answer_position.begin();it!=answer_position.end();it++)
                 out_file<<it->first<<" "<<it->second<<"\n";
         }
 
+        ///Tool-Functions.
         int get_next_port(const int& last_port){
             //in = last_port / 4 = new_out
             //First, choose the path no need to change.(self loop first).
@@ -288,28 +296,31 @@ class FCR{
                 StepTable[i] += StepTable[i-1];
             }
         }
-        void output_solution(Node *node){
-            //show solution and return the next port.
-            std::vector<Position> u = node->u;
-            std::vector<Position> v = node->v;
-            for(auto it = v.rbegin();it != v.rend();it++){
-                answer_position.push_back(*it);
+
+        void get_solution_position(const std::vector<Position>& vec, bool _reverse, bool _base){
+            if(_reverse){
+                for(auto it = vec.rbegin();it != vec.rend();it++){
+                    answer_position.push_back(*it);
+                }
             }
-            for(auto it = u.begin()+1;it != u.end();it++){
-                answer_position.push_back(*it);
+            else{
+                for(auto it = vec.begin()+1;it != vec.end();it++){
+                    answer_position.push_back(*it);
+                }
             }
-            answer_position.push_back(R);
+            if(_base){
+                answer_position.push_back(R);
+            }
         }
 
-        //tool functions below.
         void build_port_table(Node* node){
             ///convert the input position and output position to port number.
-            Position in = node->u.back();
-            Position out = node->v.back();
+            Position from = node->v.back();//v->u
+            Position to = node->u.back();
             int in_port, out_port;
             for(int i=0;i<port_num;i++){
-                if(in == Port[i]) in_port = i;
-                if(out == Port[i]) out_port = i;
+                if(from == Port[i]) out_port = i;
+                if(to == Port[i]) in_port = i;
             }
             node->type = in_port*4 + out_port;//0~15
 
