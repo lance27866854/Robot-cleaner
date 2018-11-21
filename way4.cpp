@@ -15,7 +15,6 @@ bool Visited[MAX_MAPSIZE][MAX_MAPSIZE];
 int StepTable[MAX_MAPSIZE*MAX_MAPSIZE];
 int ROW, COL;
 
-enum Direction{UP=0, DOWN, RIGHT, LEFT};
 typedef std::pair<int, int> Position;
 typedef std::pair<int, Position> StepPosition;
 typedef std::pair<bool, Position> VistPosition;
@@ -66,7 +65,7 @@ class FCR{
             ///5
             for(int i=0;i<16;i++){
                 Node* node = new Node(i);
-                port_table.push_back(node);
+                PortTable.push_back(node);
             }//0~15
         }
         void solve(){
@@ -94,7 +93,7 @@ class FCR{
             bool flag = 0;
             for(int i=0;i<port_num;i++){
                 for(int j=0;j<port_num;j++){
-                    if(port_table[i*4+j]->type > 0){
+                    if(PortTable[i*4+j]->type > 0){
                         first_start_port = i*4+j;
                         flag = 1;
                         break;
@@ -106,15 +105,15 @@ class FCR{
             //Second, we start a while loop with important variable "last_port".
             //In every iteration, we choose a path from port table and output it.
             //At the end of the iteration, we need find the next last_port with the function "get_next_port".
-            //Stop the while-loop if we traverse every paths we stored in port_table. (use travel_time for counting.)
+            //Stop the while-loop if we traverse every paths we stored in PortTable. (use travel_time for counting.)
             int last_port = first_start_port;
             int start_port = last_port / 4;
             int travel_times = 0;
             while(1){
                 //go.
-                Node *go = port_table[last_port]->next;
-                port_table[last_port]->type--;
-                port_table[last_port]->next = go->next;
+                Node *go = PortTable[last_port]->next;
+                PortTable[last_port]->type--;
+                PortTable[last_port]->next = go->next;
                 std::vector<Position> u = go->u;
                 std::vector<Position> v = go->v;
                 get_solution_position(v, 1, 0);//vector, reverse, base
@@ -139,21 +138,21 @@ class FCR{
         ///Private variables.
         std::vector<VistPosition> nodes_vec;
         std::vector<int> nodes_step_vec;
-        std::vector<Node *> port_table;
+        std::vector<Node *> PortTable;
         std::vector<Position> answer_position;
         Position Port[4];
         Position R;
         int step;
         int port_num;//how many port are there.
-        
+
         ///Tool-Functions.
         int get_next_port(const int& last_port, int& start_port){
             //in = last_port / 4 = new_out
             //First, choose the path no need to change.(self loop first).
             int new_out = start_port;
-            if(port_table[new_out*5]->type>0) return new_out*5;//self loop.
+            if(PortTable[new_out*5]->type>0) return new_out*5;//self loop.
             for(int i=0;i<port_num;i++){
-                if(port_table[new_out + i*4]->type>0){
+                if(PortTable[new_out + i*4]->type>0){
                     start_port = i;
                     return new_out + i*4;
                 }
@@ -162,15 +161,15 @@ class FCR{
             //case the u, v need to be swapped.
             int idx = -1;
             for(int i=0;i<port_num;i++){
-                if(port_table[i + new_out*4]->type>0){
+                if(PortTable[i + new_out*4]->type>0){
                     idx = i + new_out*4;
                     break;
                 }
             }
             ///After the two operation above,
-            ///if we did get the right value, we are going to create a new Node and add it to Port_table.
+            ///if we did get the right value, we are going to create a new Node and add it to PortTable.
             if(idx != -1){
-                Node *node = port_table[idx]->next;
+                Node *node = PortTable[idx]->next;
                 std::vector<Position> temp = node->u;
                 node->u = node->v;
                 node->v = temp;
@@ -184,24 +183,24 @@ class FCR{
                 //call revise_path to get new port.
                 int op = revise_path(new_out);
                 //repeat the examination steps above.
-                if(port_table[op*5]->type>0){
+                if(PortTable[op*5]->type>0){
                     start_port = op;
                     return op*5;//self loop.
                 }
                 for(int i=0;i<port_num;i++){
-                    if(port_table[op + i*4]->type>0){
+                    if(PortTable[op + i*4]->type>0){
                         start_port = i;
                         return op + i*4;
                     }
                 }
                 //reverse.
                 for(int i=0;i<port_num;i++){
-                    if(port_table[i + op*4]->type>0){
+                    if(PortTable[i + op*4]->type>0){
                         idx = i + op*4;
                         break;
                     }
                 }
-                Node *node = port_table[idx]->next;
+                Node *node = PortTable[idx]->next;
                 std::vector<Position> temp = node->u;
                 node->u = node->v;
                 node->v = temp;
@@ -214,8 +213,8 @@ class FCR{
             int port_destination[4]={0};
             for(int i=0;i<4;i++){
                 for(int j=0;j<4;j++){
-                    port_destination[j] += port_table[4*j+i]->type;
-                    port_destination[i] += port_table[4*i+j]->type;
+                    port_destination[j] += PortTable[4*j+i]->type;
+                    port_destination[i] += PortTable[4*i+j]->type;
                 }
             }
             int max_port=0;
@@ -342,7 +341,7 @@ class FCR{
 
             ///set the node to the port table.
             int n = node->type;
-            Node * insert_node = port_table[n];
+            Node * insert_node = PortTable[n];
             insert_node->type = insert_node->type + 1;
             while(insert_node->next != nullptr){
                 insert_node = insert_node->next;
