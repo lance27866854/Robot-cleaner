@@ -7,8 +7,6 @@
 #define ROAD '0'
 #define BASE 'R'
 
-std::string in_file_name="floor.data";
-std::string out_file_name="final.path";
 std::ifstream in_file;
 std::ofstream out_file;
 
@@ -137,6 +135,17 @@ class FCR{
                 out_file<<it->first<<" "<<it->second<<"\n";
         }
 
+     private:
+        ///Private variables.
+        std::vector<VistPosition> nodes_vec;
+        std::vector<int> nodes_step_vec;
+        std::vector<Node *> port_table;
+        std::vector<Position> answer_position;
+        Position Port[4];
+        Position R;
+        int step;
+        int port_num;//how many port are there.
+        
         ///Tool-Functions.
         int get_next_port(const int& last_port, int& start_port){
             //in = last_port / 4 = new_out
@@ -379,23 +388,17 @@ class FCR{
             else if((u.second-v.second == 1 || v.second-u.second == 1) && v.first == u.first) return true;
             else return false;
         }
-
-     private:
-        std::vector<VistPosition> nodes_vec;
-        std::vector<int> nodes_step_vec;
-        std::vector<Node *> port_table;
-        std::vector<Position> answer_position;
-        Position Port[4];
-        Position R;
-        int step;
-        int port_num;//how many port are there.
 };
 
-int main(void){
+int main(int argc, char *argv[]){
     ///file settings.
-    in_file.open(in_file_name,std::ios::in);
-    out_file.open(out_file_name,std::ios::out);
-    if(!in_file){std::cout<<"Something wrong with file.\n";return 1;}
+    char buffer[30];
+    sprintf(buffer, "./%s/floor.data", argv[1]);
+    in_file.open(buffer,std::ios::in);
+    sprintf(buffer, "./%s/final.path", argv[1]);
+    out_file.open(buffer,std::ios::out);
+
+    if(!in_file || !out_file){std::cout<<"Something wrong with file.\n";return 1;}
 
     ///Get input
     int battery;
