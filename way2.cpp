@@ -1,10 +1,15 @@
 #include <fstream>
 #include <iostream>
 #include <queue>
-#include <map>
+#include <list>
 #include <vector>
 
 #define MAX_MAPSIZE 1000
+#define WALL '1'
+#define FLOOR '0'
+#define BASE 'R'
+#define DU_NOTATION '@'
+#define GO_NOTATION 'X'
 
 std::string in_file_name="floor.data";
 std::string out_file_name="final.path";
@@ -41,7 +46,7 @@ class FCR{
                     _paths.pop();
                     Position p = old_path.back();
                     //down
-                    if(p.row < ROW-1 && _map[p.row+1][p.col] != '1'){
+                    if(p.row < ROW-1 && _map[p.row+1][p.col] != WALL){
                         Position np(p.row+1, p.col);//examine if np in path.
                         int _count=0;
                         for(int j=0;j<i;j++) if(old_path[j] == np) _count++;
@@ -53,7 +58,7 @@ class FCR{
                         }
                     }
                     //up
-                    if(p.row > 0 && _map[p.row-1][p.col] != '1'){
+                    if(p.row > 0 && _map[p.row-1][p.col] != WALL){
                         Position np(p.row-1, p.col);
                         int _count=0;
                         for(int j=0;j<i;j++) if(old_path[j] == np) _count++;
@@ -65,7 +70,7 @@ class FCR{
                         }
                     }
                     //left
-                    if(p.col < COL-1 && _map[p.row][p.col+1] != '1'){
+                    if(p.col < COL-1 && _map[p.row][p.col+1] != WALL){
                         Position np(p.row, p.col+1);
                         int _count=0;
                         for(int j=0;j<i;j++) if(old_path[j] == np) _count++;
@@ -77,7 +82,7 @@ class FCR{
                         }
                     }
                     //right
-                    if(p.col > 0 && _map[p.row][p.col-1] != '1'){
+                    if(p.col > 0 && _map[p.row][p.col-1] != WALL){
                         Position np(p.row, p.col-1);
                         int _count=0;
                         for(int j=0;j<i;j++) if(old_path[j] == np) _count++;
@@ -92,61 +97,60 @@ class FCR{
             }
         }
         void solve(){
-            ///Choose condition 1: counting is less
-            ///Choose condition 2: path is long enough(?)
-            //inner counting :
-            //outer counting : get more 0.
-            //union both is the best solution.
-            bool flag = false;
+            ///Choose the path that through more 0s.
+            while(1){
+                int s = _qualified_paths.size();
+                int _counting = 0;
+                auto it = _qualified_paths.begin();
 
-            for(int i=0;i<ROW;i++){
-                for(int j=0;j<COL;j++){
-                    if(_map[i][j]!='0') continue;
-
-                    Position np(i,j);
-                    int s = _qualified_paths.size();
-                    std::vector<Position> ideal_path;//default is _qualified_path[size-1];
-                    int _counting = 0;
-                    int ideal_path_index = s-1;
-
-                    for(int k=s-1;k>=0;k--){//find the paths contains np
-                        std::vector<Position> test_path = _qualified_paths[k];
-                        int ts = test_path.size();
-                        int new_counting = 0;
-                        for(int l=1;l<ts;l++){
-                            int row = test_path[l].row;
-                            int col = test_path[l].col;
-                            if(_map[row][col] == '0') new_counting++;
+                ///Find the most efficient path in qualified path.
+                for(auto i = it;i != _qualified_paths.end();i++){
+                    std::vector<Position> test_path = *i;
+                    std::vector<Position> duplicate;
+                    int ts = test_path.size();
+                    int new_counting = 0;
+                    for(int j=1;j<ts;j++){
+                        Position np = test_path[j];
+                        if(_map[np.row][np.col] == FLOOR){
+                            new_counting++;
+                            _map[np.row][np.col] = DU_NOTATION;
+                            duplicate.push_back(np);
                         }
-                        if(new_counting > _counting){_counting = new_counting; ideal_path_index = k;}
                     }
-                    if(_counting == 0){flag = true; break;}//no path can reach this point !
-
-                    ///go through this
+                    int ds = duplicate.size();
+                    for(int j=0;j<ds;j++){Position dp = duplicate[j];_map[dp.row][dp.col] = FLOOR;}
+                    if(new_counting > _counting){_counting = new_counting;it = i;}
                 }
-                if(flag) break;
+                if(_counting == 0) break;
+
+                ///Go through this path
+                std::vector<Position> ideal_path = *it;
+                s = ideal_path.size();
+                for(int i=1;i<s;i++){
+                    Position np = ideal_path[i];
+                    _map[np.row][np.col] = GO_NOTATION;
+                    step++;
+                }
+                _solutions.push(ideal_path);
+                _qualified_paths.erase(it);
             }
         }
         void show_solution(){
-            /*
-            int qs = _qualified_paths.size();
-            std::cout<<qs<<"\n";
-            while(qs--){
-                std::vector<Position> p = _qualified_paths.front();
-                _qualified_paths.pop();
-
-                int vs = p.size();
-                for(int i=0;i<vs;i++){
+            std::cout<<step<<"\n";
+            int s = _solutions.size();
+            while(s--){
+                std::vector<Position> p = _solutions.front();
+                _solutions.pop();
+                int ps = p.size();
+                for(int i=1;i<ps;i++){
                     std::cout<<p[i].row<<" "<<p[i].col<<"\n";
                 }
-                std::cout<<"-----------------------------\n";
             }
-            */
         }
 
     private:
         std::queue<std::vector<Position>> _paths;
-        std::vector<std::vector<Position>> _qualified_paths;
+        std::list<std::vector<Position>> _qualified_paths;
         std::queue<std::vector<Position>> _solutions;
         Position R;
         int step;
@@ -168,7 +172,7 @@ int main(void){
     for(int i=0;i<ROW;i++){
         for(int j=0;j<COL;j++){
             in_file>>_map[i][j];
-            if(_map[i][j] == 'R'){
+            if(_map[i][j] == BASE){
                 p.row =i;
                 p.col =j;
             }
@@ -178,8 +182,8 @@ int main(void){
     ///FCR declaration.
     FCR fcr(p);
     fcr.find_path(battery);
-    fcr.slove();
-    //fcr.show_solution();
+    fcr.solve();
+    fcr.show_solution();
 
     return 0;
 }
